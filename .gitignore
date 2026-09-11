@@ -1,0 +1,21 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Local tooling output
+.hallmark/
+
+# Backup files
+*.bak
+
+# Local environment files
+.env
+.env.*
+!.env.example

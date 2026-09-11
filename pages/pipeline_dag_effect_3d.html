@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ETL Pipeline Effect — 3D</title>
+<style>
+  :root{
+    --bg: #000000;
+    --panel-border: rgba(255, 106, 53, 0.35);
+    --text-dim: rgba(170, 170, 165, 0.55);
+    --text-bright: rgba(235, 230, 220, 0.9);
+  }
+  html, body{
+    margin:0; padding:0; height:100%;
+    background: var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  .frame{
+    position:relative;
+    width: min(90vw, 720px);
+    aspect-ratio: 16 / 10;
+    border: 1px solid var(--panel-border);
+    background:
+      radial-gradient(120% 90% at 15% 10%, rgba(255,106,53,0.07), transparent 60%),
+      var(--bg);
+    overflow:hidden;
+  }
+  canvas{ display:block; width:100%; height:100%; }
+  .label{
+    position:absolute;
+    right:14px; bottom:12px;
+    text-align:right;
+    line-height:1.5;
+    font-size:11px;
+    letter-spacing:0.04em;
+    color: var(--text-dim);
+    pointer-events:none;
+  }
+  .label .top{ color: var(--text-bright); }
+  .corner{
+    position:absolute; left:14px; top:12px;
+    font-size:11px; letter-spacing:0.04em;
+    color: var(--text-dim);
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <canvas id="c"></canvas>
+  <div class="corner">// DATA_PIPELINE</div>
+  <div class="label">
+    <div class="top">ETL_PIPELINE_v2.3</div>
+    <div>RENDERING<span id="dots"></span></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const frame = document.querySelector('.frame');
+const canvas = document.getElementById('c');
+
+const TEAL = 0xff6a35;   // structure — matches portfolio accent orange
+const AMBER = 0xffcf70;  // moving data — warm yellow, reads against the orange structure
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0.5, 4.2);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+// soft light so faceted geometry (icosahedron/octahedron) reads as 3D, not flat
+scene.add(new THREE.AmbientLight(0x2a1608, 1.2));
+const key = new THREE.PointLight(0xffb37a, 1.4, 20);
+key.position.set(2, 2, 3);
+scene.add(key);
+const rim = new THREE.PointLight(0xff6a35, 0.7, 20);
+rim.position.set(-2, -1, -2);
+scene.add(rim);
+
+const world = new THREE.Group();
+scene.add(world);
+
+// ---- glow sprite texture (radial gradient) for particles + pulses ----
+function makeGlowTexture(){
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.4, 'rgba(255,255,255,0.6)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(c);
+}
+const glowTex = makeGlowTexture();
+
+// ---- layered DAG in 3D: layers step back along Z, nodes scattered in XY per layer ----
+const LAYER_COUNTS = [3, 5, 4, 2];
+const LAYER_TYPES  = ['source', 'ingest', 'transform', 'sink'];
+const zSpacing = 1.1;
+const spreadX = 1.5;
+const spreadY = 1.0;
+
+let nodes = [];   // { mesh, pos: Vector3, type }
+let edges = [];   // { from, to, speed }
+let particles = [];
+let pulses = [];
+
+function geometryFor(type){
+  if(type === 'sink') return new THREE.BoxGeometry(0.26, 0.26, 0.26);
+  if(type === 'transform') return new THREE.OctahedronGeometry(0.16, 0);
+  return new THREE.IcosahedronGeometry(0.13, 0);
+}
+
+function buildGraph(){
+  world.clear();
+  nodes = [];
+  edges = [];
+  particles = [];
+  pulses = [];
+
+  const layerCount = LAYER_COUNTS.length;
+  const zOffset = ((layerCount - 1) * zSpacing) / 2;
+  const layerIndices = [];
+  let cursor = 0;
+
+  for(let l = 0; l < layerCount; l++){
+    const count = LAYER_COUNTS[l];
+    const z = l * zSpacing - zOffset;
+    const idxThisLayer = [];
+
+    for(let i = 0; i < count; i++){
+      const spread = count === 1 ? 0 : (i / (count - 1) - 0.5);
+      const x = spread * spreadX * 2 + Math.sin(l * 3.1 + i * 1.7) * 0.15;
+      const y = Math.cos(l * 2.3 + i * 2.9) * spreadY * 0.6;
+
+      const type = LAYER_TYPES[l];
+      const geo = geometryFor(type);
+      const mat = new THREE.MeshStandardMaterial({
+        color: TEAL,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0.5,
+        metalness: 0.1
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      world.add(mesh);
+
+      // crisp faceted outline
+      const edgesGeo = new THREE.EdgesGeometry(geo);
+      const outline = new THREE.LineSegments(
+        edgesGeo,
+        new THREE.LineBasicMaterial({ color: TEAL, transparent: true, opacity: 0.85 })
+      );
+      mesh.add(outline);
+
+      nodes.push({ mesh, pos: mesh.position, type });
+      idxThisLayer.push(cursor++);
+    }
+    layerIndices.push(idxThisLayer);
+  }
+
+  const lineMat = new THREE.LineBasicMaterial({ color: TEAL, transparent: true, opacity: 0.16 });
+  function addEdge(fi, ti){
+    const a = nodes[fi].pos, b = nodes[ti].pos;
+    const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
+    const line = new THREE.Line(geo, lineMat);
+    world.add(line);
+    edges.push({ from: fi, to: ti, speed: 0.0013 + Math.random() * 0.0013 });
+  }
+
+  for(let l = 0; l < layerCount - 1; l++){
+    const from = layerIndices[l];
+    const to = layerIndices[l + 1];
+    from.forEach(fi => {
+      const connections = 1 + (Math.random() < 0.5 ? 1 : 0);
+      const shuffled = [...to].sort(() => Math.random() - 0.5);
+      shuffled.slice(0, Math.min(connections, to.length)).forEach(ti => addEdge(fi, ti));
+    });
+    to.forEach(ti => {
+      const hasIncoming = edges.some(e => e.to === ti);
+      if(!hasIncoming) addEdge(from[Math.floor(Math.random() * from.length)], ti);
+    });
+  }
+}
+
+// ---- particles traveling along edges ----
+function spawnParticle(){
+  const edge = edges[Math.floor(Math.random() * edges.length)];
+  if(!edge) return;
+  const mat = new THREE.SpriteMaterial({
+    map: glowTex,
+    color: AMBER,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(0.16, 0.16, 1);
+  world.add(sprite);
+  particles.push({ edge, t: 0, speed: edge.speed, sprite });
+}
+
+function spawnPulse(pos){
+  const mat = new THREE.SpriteMaterial({
+    map: glowTex,
+    color: AMBER,
+    transparent: true,
+    opacity: 0.6,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.copy(pos);
+  sprite.scale.set(0.1, 0.1, 1);
+  world.add(sprite);
+  pulses.push({ sprite, t0: performance.now() });
+}
+
+let lastSpawn = 0;
+
+function updateParticles(now){
+  if(now - lastSpawn > 600){
+    lastSpawn = now;
+    spawnParticle();
+  }
+
+  particles = particles.filter(p => {
+    p.t += p.speed;
+    const a = nodes[p.edge.from].pos, b = nodes[p.edge.to].pos;
+    p.sprite.position.lerpVectors(a, b, Math.min(p.t, 1));
+    if(p.t >= 1){
+      world.remove(p.sprite);
+      p.sprite.material.dispose();
+      spawnPulse(b);
+      return false;
+    }
+    return true;
+  });
+
+  pulses = pulses.filter(p => {
+    const age = (now - p.t0) / 650;
+    if(age >= 1){
+      world.remove(p.sprite);
+      p.sprite.material.dispose();
+      return false;
+    }
+    const scale = 0.1 + age * 0.55;
+    p.sprite.scale.set(scale, scale, 1);
+    p.sprite.material.opacity = 0.55 * (1 - age);
+    return true;
+  });
+}
+
+function resize(){
+  const w = frame.clientWidth;
+  const h = frame.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+  if(nodes.length === 0) buildGraph();
+}
+
+let t = 0;
+function animate(now){
+  t += 0.0008;
+  world.rotation.y = t;
+  world.rotation.x = Math.sin(t * 0.6) * 0.12;
+
+  updateParticles(now);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(animate);
+
+// animated "RENDERING..." dots
+const dotsEl = document.getElementById('dots');
+let dotCount = 0;
+setInterval(() => {
+  dotCount = (dotCount + 1) % 4;
+  dotsEl.textContent = '.'.repeat(dotCount);
+}, 450);
+</script>
+
+</body>
+</html>
