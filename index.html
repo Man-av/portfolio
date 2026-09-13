@@ -29,6 +29,7 @@
       </nav>
     </div>
   </header>
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
 
   <main class="container">
 
@@ -465,6 +466,51 @@
     (function () {
       const hero = document.getElementById('hero');
       const stickyNav = document.getElementById('sticky-nav');
+      const scrollProgress = document.getElementById('scroll-progress');
+      const revealSections = [...document.querySelectorAll('.section:not(.hero-section)')];
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      revealSections.forEach((section) => section.classList.add('reveal-on-scroll'));
+
+      if (!prefersReducedMotion && revealSections.length) {
+        const revealObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+            });
+          },
+          { rootMargin: '0px 0px -10% 0px', threshold: 0.08 }
+        );
+
+        revealSections.forEach((section) => revealObserver.observe(section));
+      } else {
+        revealSections.forEach((section) => section.classList.add('is-visible'));
+      }
+
+      let scrollFrame = null;
+      const updateScrollMotion = () => {
+        scrollFrame = null;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+
+        if (scrollProgress) {
+          scrollProgress.style.transform = `scaleX(${progress})`;
+        }
+
+        if (!prefersReducedMotion && hero) {
+          hero.style.setProperty('--hero-shift', `${Math.min(window.scrollY * 0.08, 28)}px`);
+        }
+      };
+
+      const requestScrollMotion = () => {
+        if (scrollFrame === null) scrollFrame = requestAnimationFrame(updateScrollMotion);
+      };
+
+      window.addEventListener('scroll', requestScrollMotion, { passive: true });
+      window.addEventListener('resize', requestScrollMotion);
+      requestScrollMotion();
 
       if (hero && stickyNav) {
         const observer = new IntersectionObserver(

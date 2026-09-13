@@ -64,6 +64,18 @@ body {
   pointer-events: auto;
 }
 
+.scroll-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1100;
+  height: 2px;
+  background-color: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left center;
+  box-shadow: 0 0 12px rgba(255, 106, 26, 0.8);
+  pointer-events: none;
+}
+
 .nav-inner {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -128,7 +140,7 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 64px;
+  gap: clamp(80px, 9vw, 112px);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -140,6 +152,50 @@ body {
   flex-direction: column;
   gap: 20px;
 }
+
+.section.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.section.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section.reveal-on-scroll .project-block,
+.section.reveal-on-scroll .skill-group,
+.section.reveal-on-scroll .dated-row,
+.section.reveal-on-scroll .term-line {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.section.reveal-on-scroll.is-visible .project-block,
+.section.reveal-on-scroll.is-visible .skill-group,
+.section.reveal-on-scroll.is-visible .dated-row,
+.section.reveal-on-scroll.is-visible .term-line {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section.reveal-on-scroll.is-visible .project-block:nth-child(2),
+.section.reveal-on-scroll.is-visible .skill-group:nth-child(2),
+.section.reveal-on-scroll.is-visible .dated-row:nth-child(2),
+.section.reveal-on-scroll.is-visible .term-line:nth-child(2) { transition-delay: 0.08s; }
+
+.section.reveal-on-scroll.is-visible .project-block:nth-child(3),
+.section.reveal-on-scroll.is-visible .skill-group:nth-child(3),
+.section.reveal-on-scroll.is-visible .dated-row:nth-child(3),
+.section.reveal-on-scroll.is-visible .term-line:nth-child(3) { transition-delay: 0.16s; }
+
+.section.reveal-on-scroll.is-visible .project-block:nth-child(4),
+.section.reveal-on-scroll.is-visible .skill-group:nth-child(4) { transition-delay: 0.24s; }
+
+.section.reveal-on-scroll.is-visible .project-block:nth-child(5) { transition-delay: 0.32s; }
+.section.reveal-on-scroll.is-visible .project-block:nth-child(6) { transition-delay: 0.4s; }
 
 /* Hero Section — text left, ETL pipeline DAG effect right */
 .hero-section {
@@ -190,6 +246,8 @@ body {
     radial-gradient(120% 90% at 15% 10%, rgba(255, 106, 53, 0.07), transparent 60%),
     #000000;
   overflow: hidden;
+  transform: translateY(var(--hero-shift, 0px));
+  transition: transform 0.1s linear;
 }
 
 .pipeline-frame canvas {
@@ -817,7 +875,7 @@ a:hover .link-icon {
     padding: 24px 28px 64px;
   }
   .container {
-    gap: 44px;
+    gap: 64px;
   }
   .sticky-nav {
     padding: 10px 14px;
@@ -896,7 +954,7 @@ a:hover .link-icon {
     height: 14px;
   }
   .container {
-    gap: 40px;
+    gap: 56px;
   }
 }
 
