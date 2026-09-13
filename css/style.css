@@ -892,6 +892,22 @@ a:hover .link-icon {
   .hero-name {
     font-size: 19px;
   }
+  .hero-main > .link-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 8px;
+  }
+  .hero-main > .link-row .separator {
+    display: none;
+  }
+  .hero-main > .link-row .link-item {
+    min-width: 0;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .hero-main > .link-row .link-item:last-child {
+    grid-column: 2;
+  }
   .cursor {
     width: 11px;
     height: 18px;
