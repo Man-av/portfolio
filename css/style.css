@@ -247,7 +247,13 @@ body {
     #000000;
   overflow: hidden;
   transform: translateY(var(--hero-shift, 0px));
-  transition: transform 0.1s linear;
+  transition: transform 0.2s ease;
+  transform-origin: center;
+}
+
+.pipeline-frame:hover {
+  transform: translateY(calc(var(--hero-shift, 0px) - 4px)) scale(1.015);
+  box-shadow: 0 14px 30px rgba(255, 106, 26, 0.2);
 }
 
 .pipeline-frame canvas {
