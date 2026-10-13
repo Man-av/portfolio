@@ -227,27 +227,28 @@ body {
   min-width: 0;
 }
 
-/* Profile picture — small square box with glowing orange border */
-.avatar-box {
-  width: 96px;
-  height: 96px;
-  margin-top: 16px;
-  border: 2px solid var(--orange);
-  border-radius: 4px;
-  padding: 4px;
-  box-shadow:
-    0 0 12px rgba(255, 106, 26, 0.55),
-    0 0 32px rgba(255, 106, 26, 0.35),
-    inset 0 0 12px rgba(255, 106, 26, 0.25);
+/* Manav's cursor-following mascot: a fixed torso with nine head directions. */
+.mascot {
+  display: block;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+  /* Offset the transparent sprite padding to sit directly above MANAV. */
+  margin: 0 0 -44px -36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-.avatar-img {
+.mascot-sprite {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 2px;
-  display: block;
-  filter: grayscale(20%) contrast(1.05);
+  background: url('../assets/manavmascot-directions.webp') 50% 50% / 300% 300% no-repeat;
+  pointer-events: none;
 }
 
 /* ETL Pipeline DAG 3D effect panel */
@@ -1045,6 +1046,10 @@ a:hover .link-icon {
     font-size: 19px;
   }
 
+  .mascot {
+    margin-left: -54px;
+  }
+
   .hero-main>.link-row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1134,10 +1139,11 @@ a:hover .link-icon {
     margin: -1px -3px;
   }
 
-  .avatar-box {
-    width: 72px;
-    height: 72px;
-    margin-top: 8px;
+  .mascot {
+    width: 160px;
+    height: 160px;
+    margin-bottom: -36px;
+    margin-left: -44px;
   }
 
   .hero-name {

@@ -41,9 +41,10 @@
     <!-- 01. HERO SECTION -->
     <section class="section hero-section" id="hero" aria-label="Hero Introduction">
       <div class="hero-main">
-        <div class="avatar-box">
-          <img src="./assets/PP.png" alt="Profile picture of Manav Sharma" class="avatar-img">
-        </div>
+        <button type="button" class="mascot" id="manav-mascot"
+          aria-label="Say hello to Manav's mascot" title="Click for a nod">
+          <span class="mascot-sprite" aria-hidden="true"></span>
+        </button>
         <h1 class="hero-name">
           <span>MANAV SHARMA</span><span class="cursor" aria-hidden="true"></span>
         </h1>
@@ -755,6 +756,7 @@
       }
     })();
   </script>
+  <script src="./src/components/Mascot.js"></script>
   <script src="./src/components/MouseHoverGrid.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
